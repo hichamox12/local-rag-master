@@ -44,6 +44,9 @@ def analyze_image_with_blip(image, prompt):
     return decoded
 
 def app():
+    st.markdown("<div class='centered-logo'>", unsafe_allow_html=True)
+    st.image('images/logo_m.jpg', width=200)
+    st.markdown("</div>", unsafe_allow_html=True)
     st.title("Image Analysis")
     st.write("This is the Image Analysis page.")
     

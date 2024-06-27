@@ -57,6 +57,10 @@ def transcribe_audio(file):
 
 # Streamlit app
 def app():
+    st.markdown("<div class='centered-logo'>", unsafe_allow_html=True)
+    st.image('images/logo_m.jpg', width=200)
+    st.markdown("</div>", unsafe_allow_html=True)
+
     st.title("Audio Whisper")
     st.write("Upload an audio file for transcription:")
 

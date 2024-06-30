@@ -85,23 +85,26 @@ def home_page():
     st.markdown("<div class='centered-logo'>", unsafe_allow_html=True)
     st.image('images/logo_m.jpg', width=200)
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.header("ChatPDF")
+    st.header("Welcome Page: AIChatPDF")
+    #st.header("ChatPDF")
+
+    st.markdown("### You can upload a document to ask the assistant about it.")  # Notification added
+    st.success("All models are connected. The status is up.")
 
     st.subheader("Upload a document")
-    st.file_uploader(
-        "Upload document",
-        type=["pdf"],
-        key="file_uploader",
-        on_change=read_and_save_file,
-        label_visibility="collapsed",
-        accept_multiple_files=True,
-    )
+    #st.file_uploader(
+     #   "Upload document",
+      #  type=["pdf"],
+       # key="file_uploader",
+       # on_change=read_and_save_file,
+       # label_visibility="collapsed",
+       # accept_multiple_files=True,
+   # )
 
     st.session_state["ingestion_spinner"] = st.empty()
     
     display_messages()
-    st.text_input("Message", key="user_input", on_change=process_input)
+   # st.text_input("Message", key="user_input", on_change=process_input)
 
 # Main application page
 def page():

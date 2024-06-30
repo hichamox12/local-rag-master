@@ -5,3 +5,18 @@ chromadb
 pypdf
 fastembed
 
+
+
+streamlit
+pydub
+transformers
+huggingface_hub
+numpy
+torch
+PyPDF2
+pymongo
+gridfs
+openai
+langchain
+pinecone-client
+nest_asyncio

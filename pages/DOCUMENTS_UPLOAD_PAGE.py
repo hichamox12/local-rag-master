@@ -80,7 +80,7 @@ def embed_page():
             add_pdf_to_pinecone(pdf_text)
             save_pdf_to_mongodb(uploaded_file, pdf_text)
             st.session_state["pdf_text"] = pdf_text  # Store PDF text in session state
-            st.success("PDF content has been added to the model context and saved to MongoDB.")
+            st.success("PDF content has been added to the model context and saved .")
             logging.info(f"PDF text: {pdf_text}")  # Log the PDF text
         else:
             st.error("Failed to extract text from PDF.")

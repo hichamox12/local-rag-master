@@ -1,45 +1,31 @@
 import streamlit as st
 import PyPDF2
 import logging
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
 from pinecone import Pinecone, ServerlessSpec
-from pymongo import MongoClient
-import gridfs
 
-# Set logging level
 logging.basicConfig(level=logging.INFO)
 
-# Set your API key for embeddings
 api_key = "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"
-
-# Initialize embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=api_key)
 
-# Initialize Pinecone
 pinecone_api_key = "a134614e-8a1a-47ea-8483-a5aa51a9f1f7"
 pc = Pinecone(api_key=pinecone_api_key)
 index_name = "quicksart"
 
-# Ensure this name is 45 characters or less
 existing_indexes = pc.list_indexes().names()
 if index_name not in existing_indexes:
     pc.create_index(
         name=index_name,
-        dimension=1536,  # Adjust dimension to match your embeddings
+        dimension=1536,  
         metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1")  # Adjust the region to a valid one
+        spec=ServerlessSpec(cloud="aws", region="us-east-1")  
     )
 else:
     logging.info(f"Index '{index_name}' already exists. Using the existing index.")
 
 index = pc.Index(index_name)
 
-# Initialize MongoDB client
-mongo_client = MongoClient("mongodb://localhost:27017/")
-db = mongo_client["document_db"]
-fs = gridfs.GridFS(db)
-
-# Function to extract text from PDF
 def extract_text_from_pdf(file):
     try:
         reader = PyPDF2.PdfReader(file)
@@ -52,38 +38,69 @@ def extract_text_from_pdf(file):
         logging.error(f"Error extracting text from PDF: {e}")
         return ""
 
-# Function to add PDF text to Pinecone
-def add_pdf_to_pinecone(pdf_text):
-    vectors = embeddings.embed_documents([pdf_text])
-    for i, vector in enumerate(vectors):
-        metadata = {"text": pdf_text}  # Ensure metadata is included
-        index.upsert([(f"pdf-{i}", vector, metadata)])
+def split_text_into_chunks(text, num_chunks=3):
+    words = text.split()
+    total_words = len(words)
+    chunk_size = total_words // num_chunks
+    chunks = []
+    current_chunk = []
+    current_length = 0
+    
+    for word in words:
+        if current_length + len(word) + 1 > chunk_size and len(chunks) < num_chunks - 1:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = []
+            current_length = 0
+        current_chunk.append(word)
+        current_length += len(word) + 1
+    
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+    
+    return chunks    
 
-# Function to save PDF to MongoDB
-def save_pdf_to_mongodb(file, pdf_text):
-    file_id = fs.put(file, filename=file.name)
-    db.documents.insert_one({"filename": file.name, "file_id": file_id, "text": pdf_text})
+def add_pdf_to_pinecone(pdf_texts):
+    chunk_id = 0
+    for pdf_index, pdf_text in enumerate(pdf_texts):
+        chunks = split_text_into_chunks(pdf_text, num_chunks=3)
+        vectors = embeddings.embed_documents(chunks)
+        upserts = []
+        for i, vector in enumerate(vectors):
+            metadata = {"text": chunks[i], "pdf_index": pdf_index, "chunk_index": i}  
+            upserts.append((f"pdf-{pdf_index}-chunk-{chunk_id}", vector, metadata))
+            chunk_id += 1
+        
+        try:
+            index.upsert(upserts)
+            logging.info(f"Upserted {len(upserts)} vectors for PDF {pdf_index}")
+        except Exception as e:
+            logging.error(f"Error upserting vectors for PDF {pdf_index}: {e}")
 
-# Streamlit interface
-def embed_page():
+def DOCUMENTS_UPLOAD_PAGE():
     st.markdown("<div class='centered-logo'>", unsafe_allow_html=True)
-    st.image('images/logo_m.jpg', width=200)
+    st.image('images/logo_m.png', width=200)
     st.markdown("</div>", unsafe_allow_html=True)
     st.title("Upload and Embed PDF")
 
-    # File uploader for PDF
-    uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+    uploaded_files = st.file_uploader("Upload multiple PDFs (max 200 MB each)", type="pdf", accept_multiple_files=True)
 
-    if uploaded_file:
-        pdf_text = extract_text_from_pdf(uploaded_file)
-        if pdf_text:
-            add_pdf_to_pinecone(pdf_text)
-            save_pdf_to_mongodb(uploaded_file, pdf_text)
-            st.session_state["pdf_text"] = pdf_text  # Store PDF text in session state
-            st.success("PDF content has been added to the model context and saved .")
-            logging.info(f"PDF text: {pdf_text}")  # Log the PDF text
-        else:
-            st.error("Failed to extract text from PDF.")
+    if uploaded_files:
+        all_pdf_texts = []
+        for uploaded_file in uploaded_files:
+            if uploaded_file.size > 200 * 1024 * 1024:
+                st.error(f"File {uploaded_file.name} exceeds the 200 MB size limit.")
+                continue
+
+            pdf_text = extract_text_from_pdf(uploaded_file)
+            if pdf_text:
+                all_pdf_texts.append(pdf_text)
+                st.success(f"PDF content from {uploaded_file.name} has been added to the model context and saved.")
+                logging.info(f"PDF text from {uploaded_file.name}: {pdf_text}")  
+            else:
+                st.error(f"Failed to extract text from {uploaded_file.name}.")
+
+        add_pdf_to_pinecone(all_pdf_texts)  
+        st.session_state["pdf_text"] = " ".join(all_pdf_texts)  
 
 if __name__ == "__main__":
-    embed_page()
+    DOCUMENTS_UPLOAD_PAGE()

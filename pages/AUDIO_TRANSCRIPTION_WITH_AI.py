@@ -5,11 +5,18 @@ from transformers import WhisperProcessor, WhisperForConditionalGeneration
 from huggingface_hub import login
 import numpy as np
 import torch
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 print(torch.__version__)
 print(torch.cuda.is_available())
 
-hf_token = "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"
+# Get HuggingFace token from environment variables
+hf_token = os.getenv("HUGGINGFACE_TOKEN")
+if not hf_token:
+    raise ValueError("HUGGINGFACE_TOKEN not found in environment variables")
 
 login(hf_token)
 

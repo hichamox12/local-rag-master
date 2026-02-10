@@ -5,9 +5,21 @@ import openai
 import os
 import nest_asyncio
 import asyncio
+from dotenv import load_dotenv
 
-os.environ["GOOGLE_API_KEY"] = 'AIzaSyCAccFwkLEiwJ_owYjmUmlqEx9joaANyTA'
-openai.api_key = "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"
+# Load environment variables from .env file
+load_dotenv()
+
+# Get API keys from environment variables
+google_api_key = os.getenv("GOOGLE_API_KEY")
+if not google_api_key:
+    raise ValueError("GOOGLE_API_KEY not found in environment variables")
+os.environ["GOOGLE_API_KEY"] = google_api_key
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
+openai.api_key = openai_api_key
 
 nest_asyncio.apply()
 

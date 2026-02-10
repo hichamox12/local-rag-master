@@ -7,9 +7,15 @@ import base64
 from io import BytesIO
 import os
 from huggingface_hub import login
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
-huggingface_token = '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'
+# Get HuggingFace token from environment variables
+huggingface_token = os.getenv("HUGGINGFACE_TOKEN")
+if not huggingface_token:
+    raise ValueError("HUGGINGFACE_TOKEN not found in environment variables")
 login(huggingface_token)
 
 

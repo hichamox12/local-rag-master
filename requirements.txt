@@ -4,6 +4,7 @@ streamlit_chat
 chromadb
 pypdf
 fastembed
+python-dotenv
 
 streamlit
 pydub

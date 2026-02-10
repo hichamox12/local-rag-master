@@ -7,12 +7,18 @@ from langchain.chains import LLMChain
 from langchain.embeddings import OpenAIEmbeddings
 from pinecone import Pinecone
 import asyncio
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-
-api_key = "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"
+# Get API keys from environment variables
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
 
 llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=api_key)
 
@@ -25,8 +31,10 @@ chain = LLMChain(llm=llm, prompt=prompt_template)
 
 embeddings = OpenAIEmbeddings(openai_api_key=api_key)
 
-
-pinecone_api_key = "a134614e-8a1a-47ea-8483-a5aa51a9f1f7"
+# Get Pinecone API key from environment variables
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+if not pinecone_api_key:
+    raise ValueError("PINECONE_API_KEY not found in environment variables")
 pc = Pinecone(api_key=pinecone_api_key)
 index_name = "quicksart"
 index = pc.Index(index_name)
